@@ -63,6 +63,9 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
     bool debugLogDiagnostics = false,
     GlobalKey<NavigatorState>? navigatorKey,
     String? restorationScopeId,
+    GoRouterPredicate? willPush,
+    GoRouterPredicate? willGo,
+    GoRouterPredicate? willReplace,
   }) : backButtonDispatcher = RootBackButtonDispatcher() {
     setLogging(enabled: debugLogDiagnostics);
     WidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +105,10 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
     );
     _routerDelegate.addListener(_handleStateMayChange);
 
+    _willPush = willPush;
+    _willGo = willGo;
+    _willReplace = willReplace;
+
     assert(() {
       log.info('setting initial location $initialLocation');
       return true;
@@ -112,6 +119,9 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
   late final GoRouteInformationParser _routeInformationParser;
   late final GoRouterDelegate _routerDelegate;
   late final GoRouteInformationProvider _routeInformationProvider;
+  late final GoRouterPredicate? _willPush;
+  late final GoRouterPredicate? _willGo;
+  late final GoRouterPredicate? _willReplace;
 
   @override
   final BackButtonDispatcher backButtonDispatcher;
@@ -184,6 +194,13 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
       log.info('going to $location');
       return true;
     }());
+
+    if (_willGo != null &&
+        !_willGo!(
+            _routerDelegate.navigatorKey.currentContext!, location, extra)) {
+      return;
+    }
+
     _routeInformationProvider.value =
         RouteInformation(location: location, state: extra);
   }
@@ -209,6 +226,13 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
       log.info('pushing $location');
       return true;
     }());
+
+    if (_willPush != null &&
+        !_willPush!(
+            _routerDelegate.navigatorKey.currentContext!, location, extra)) {
+      return;
+    }
+
     _routeInformationParser
         .parseRouteInformationWithDependencies(
       RouteInformation(location: location, state: extra),
@@ -241,6 +265,12 @@ class GoRouter extends ChangeNotifier implements RouterConfig<RouteMatchList> {
   /// * [go] which navigates to the location.
   /// * [push] which pushes the location onto the page stack.
   void replace(String location, {Object? extra}) {
+    if (_willReplace != null &&
+        !_willReplace!(
+            _routerDelegate.navigatorKey.currentContext!, location, extra)) {
+      return;
+    }
+
     routeInformationParser
         .parseRouteInformationWithDependencies(
       RouteInformation(location: location, state: extra),

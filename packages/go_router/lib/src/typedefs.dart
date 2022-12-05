@@ -50,3 +50,10 @@ typedef GoRouterBuilderWithNav = Widget Function(
 /// The signature of the redirect callback.
 typedef GoRouterRedirect = FutureOr<String?> Function(
     BuildContext context, GoRouterState state);
+
+/// The signature of the pre-redirect callback.
+typedef GoRouterPredicate = bool Function(
+  BuildContext context,
+  String location,
+  Object? extra,
+);
